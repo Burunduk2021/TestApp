@@ -1,0 +1,101 @@
+﻿@model List<VacancyVM>
+
+@section css{
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .myborder {
+            border: 1px solid #ced4da;
+        }
+    </style>
+}
+@section js{
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <!--Select2 -->
+    <script src="~/js/select2.min.js"></script>
+
+   <script>
+        //partial views - by btn
+        $(document).ready(function () {
+            //select (single and multiple)
+            $('.js-combo-selector').select2({
+                width: 'resolve' // need to override the changed default
+            }
+            );
+
+            //btn actions
+            $('.container-fluid').on('click', '.btn', function () {
+                
+                var wrapper = "#divWrapper";
+                var url = "";
+                var selectedVac = "";
+                var selectedId = 0;
+                switch ($(this).attr("id")) {
+                    case 'defaultBTN':
+                        //console.log("выбрано показать все вакансии");
+                        url = "@Url.Action("GetPartialWithAllVacancies")";                        
+                        break;
+                    case 'selectBTN':
+                        if ($("#SelectVacancies").val() != null)
+                        {
+                            //console.log("выбрано показать одну вакансию");
+                            url = "@Url.Action("GetPartialOnlySelectedVacancy")";
+                            selectedVac = $("#SelectVacancies option:selected").text();
+                            //console.log(selectedVac);
+                        }
+                        else
+                        {
+                        alert("АЙ-ЯЙ-ЯЙ, А ВАКАНСИЮ-ТО НЕ ВЫБРАЛИ!");
+                        }
+                        break;
+                }
+                if (url.length > 0) {
+                    AjaxAxtion(wrapper, url, selectedVac, selectedId);
+                }
+            });
+        });
+
+        //AJAX - подгрузка partial
+        function AjaxAxtion(wrapper, url, selectedVac, selectedId) {
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: url,
+                data: { selectedVac: selectedVac, selectedId: selectedId },
+                dataType: "html",
+                success: function (data) {
+                    $(wrapper).empty();
+                    $(wrapper).append(data);                  
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert('Ошибка загрузки таблицы!');
+                }
+            });
+        }
+    </script>
+}
+
+
+
+
+<div class="container-fluid text-center">
+    <h1 class="display-4">Список вакансий</h1>
+
+    <div class="row my-2">
+        <div class="input-group">
+            <div class="col-4 px-2 bg-secondary d-flex align-items-center rounded-start">
+                <select id="SelectVacancies" class="custom-select js-combo-selector" style="width: 100%;"
+                        asp-items="@new SelectList(Model.Select(v => v.Name))">
+                    <option value="" disabled selected hidden>Выберите вакансию...</option>
+                </select>
+            </div>
+            <button id="selectBTN" class="btn btn-dark text-white">Показать только выбранную</button>
+            <button id="defaultBTN" class="btn btn-warning text-dark">Показать все</button>
+        </div>
+    </div>
+
+    <div id="divWrapper">
+        @await Html.PartialAsync("_partial.VacancyTable", Model)
+    </div>
+</div>
